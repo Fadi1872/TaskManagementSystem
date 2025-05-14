@@ -1,61 +1,129 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Task Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Type:** Back-end API
 
-## About Laravel
+### Project Name
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+`task-management-system`
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Description
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+A RESTful API for managing tasks with support for user roles, task statuses, priorities, and user activation.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Requirements
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. **CRUD on Tasks**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+   * **Admin**: create, update, delete, list all tasks, filter by user, status, title
+   * **User**: list associated tasks, change status
+2. **CRUD on Statuses**
 
-## Laravel Sponsors
+   * **Admin**: create, update, delete (only if not associated with tasks), list all statuses
+   * **User**: list statuses
+3. **Task Priorities**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+   * Priority table stores `name` and `level` (0–20) for ordering tasks
+   * **Admin**: create, update, delete, list all priorities
+   * **User**: list all priorities
+4. **User Management**
 
-### Premium Partners
+   * Users can be deactivated; their data remains in tasks but deactivated users are hidden from user lists
+   * **Admin**: create users, delete users, list all users, update own account, toggle user activation status
+   * **User**: update own account
+5. **Authentication**
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+   * **Admin**: create accounts, delete accounts, toggle activation status
+   * **User**: log in, log out, update profile
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Tables
 
-## Code of Conduct
+#### 1. users
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* `id` (PK)
+* `name` (string)
+* `email` (string)
+* `password` (string)
+* `is_admin` (bool)
+* `is_activated` (bool)
+* *timestamps*
 
-## Security Vulnerabilities
+#### 2. statuses
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+* `id` (PK, AI)
+* `name` (string, 40)
+* *timestamps*
 
-## License
+#### 3. priorities
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* `id` (PK, AI)
+* `name` (string, 40)
+* `level` (integer, 0–20)
+* *timestamps*
+
+#### 4. tasks
+
+* `id` (PK, AI)
+* `title` (string, 255)
+* `description` (text, 10000)
+* `status_id` (FK ➔ statuses.id)
+* `priority_id` (FK ➔ priorities.id)
+* `created_by` (FK ➔ users.id)
+* `start_date` (date)
+* `due_date` (date)
+* `completed_at` (date, nullable)
+* *timestamps*
+
+#### 5. task\_user (pivot)
+
+* `user_id` (FK ➔ users.id)
+* `task_id` (FK ➔ tasks.id)
+* *PK: (user\_id, task\_id)*
+* *timestamps*
+
+---
+
+### Relationships
+
+* **Users ↔ Tasks**: many-to-many via `task_user`; a task is created by one user (`created_by`) and can be assigned to multiple users.
+* **Tasks ↔ Statuses**: one-to-many; each task has one status via `status_id`.
+* **Tasks ↔ Priorities**: one-to-many; each task has one priority via `priority_id`.
+
+---
+
+### User Roles & Permissions
+
+| Role      | Permissions                                                                  |
+| --------- | ---------------------------------------------------------------------------- |
+| **Admin** | - Tasks: Create, Read, Update, Delete, Filter by user/status/title           |
+|           | - Statuses: Create, Read, Update, Delete (if unused)                         |
+|           | - Priorities: Create, Read, Update, Delete                                   |
+|           | - Users: Create, Read, Update own account, Delete, Toggle activation         |
+|           | - Authentication: Create accounts, Delete accounts, Toggle activation status |
+| **User**  | - Tasks: List assigned, Change status                                        |
+|           | - Statuses: Read                                                             |
+|           | - Priorities: Read                                                           |
+|           | - Users: Update own account                                                  |
+|           | - Authentication: Log in, Log out, Update profile                            |
+
+---
+
+---
+
+### Postman Collection
+
+You can import the API collection into Postman using the following link or by downloading the JSON file:
+
+* **Collection URL:** [https://documenter.getpostman.com/view/34255778/2sB2qUo5C5](https://documenter.getpostman.com/view/34255778/2sB2qUo5C5)
+
+To import in Postman:
+
+1. Open Postman.
+2. Click on **Import** in the top-left corner.
+3. Select **Link** and paste the URL above, or choose **File** to upload a downloaded JSON.
+4. Click **Continue**, then **Import**.
+
+*End of README*
